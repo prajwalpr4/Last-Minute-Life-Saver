@@ -41,21 +41,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const getRuntimeEnv = (key: string) => process.env[key] || "";
+
+  const firebaseConfig = {
+    apiKey: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_API_KEY"),
+    authDomain: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+    projectId: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
+    storageBucket: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET"),
+    messagingSenderId: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID"),
+    appId: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_APP_ID"),
+    measurementId: getRuntimeEnv("NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID"),
+  };
+
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              window.__FIREBASE_CONFIG__ = {
-                apiKey: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "")},
-                authDomain: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "")},
-                projectId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "")},
-                storageBucket: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "")},
-                messagingSenderId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "")},
-                appId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "")},
-                measurementId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "")}
-              };
+              window.__FIREBASE_CONFIG__ = ${JSON.stringify(firebaseConfig)};
             `
           }}
         />
