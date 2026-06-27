@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
               thinkingConfig: {
                 thinkingLevel: "medium", // Routine extraction and scheduling
               },
-            },
+            } as any,
           });
 
           // Helper to call Gemini and parse JSON (with Groq Fallback)

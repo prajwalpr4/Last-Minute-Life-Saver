@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
           thinkingLevel: "high",
         },
         responseMimeType: "application/json",
-      },
+      } as any,
     });
 
     const prompt = `You are a Predictive Deadline Rescue Agent. A user is at risk of missing the deadline for task: "${task.title}".

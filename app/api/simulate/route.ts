@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
           thinkingLevel: "high", // Strategic advisor feature requires high reasoning
         },
         responseMimeType: "application/json",
-      },
+      } as any,
     });
 
     const prompt = `You are a "What-If" Schedule Simulator and Strategic Advisor.

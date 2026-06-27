@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
                 },
               ],
             },
-          ],
+          ] as any,
         });
 
         let calls: any[] = [];

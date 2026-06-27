@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
           thinkingLevel: "high", // Behavioral analysis requires high reasoning
         },
         responseMimeType: "application/json",
-      },
+      } as any,
     });
 
     const prompt = `You are an AI Behavioral Analyst. Analyze the user's task history to build a productivity profile.

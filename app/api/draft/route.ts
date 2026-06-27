@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
           thinkingLevel: "high", // Deep Work Execution requires high reasoning
         },
         responseMimeType: "application/json",
-      },
+      } as any,
     });
 
     const prompt = `You are a Deep Work Execution Agent. Your job is to read the context of a task and generate a highly detailed FIRST DRAFT for the user to start working from.

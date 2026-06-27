@@ -79,8 +79,8 @@ export default function DashboardPage() {
         
         // Sort locally by createdAt desc (handle pending server timestamps)
         taskList.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
+          const timeA = (a.createdAt as any)?.toMillis ? (a.createdAt as any).toMillis() : Date.now();
+          const timeB = (b.createdAt as any)?.toMillis ? (b.createdAt as any).toMillis() : Date.now();
           return timeB - timeA;
         });
 
@@ -592,7 +592,7 @@ export default function DashboardPage() {
         onClose={() => setSimulatorOpen(false)}
         userId={user?.uid || ""}
         tasks={tasks}
-        googleToken={user?.googleCalendarConnected ? (user as any).googleAccessToken : undefined}
+        googleToken={(user as any)?.googleCalendarConnected ? (user as any).googleAccessToken : undefined}
       />
     </>
   );
