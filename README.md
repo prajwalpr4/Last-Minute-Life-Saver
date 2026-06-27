@@ -374,21 +374,6 @@ The app uses a custom design system defined in `globals.css` with CSS custom pro
 
 ---
 
-## 🧪 Evaluation Matrix Alignment
-
-> *Built for the Vibe2Ship Hackathon evaluation criteria:*
-
-| Criteria | Score Target | How We Deliver |
-|---------|-------------|---------------|
-| **Problem Solving & Impact** (20%) | ⭐⭐⭐⭐⭐ | Addresses real procrastination crisis with measurable outcomes — 94% deadline success after Panic Mode |
-| **Agentic Depth** (20%) | ⭐⭐⭐⭐⭐ | 8 autonomous AI endpoints running independent reasoning chains, SSE streaming, multi-step planning |
-| **Innovation & Creativity** (20%) | ⭐⭐⭐⭐⭐ | Dual-Brain architecture, Deadline Pulse Ring visual identity, behavioral profiling, What-If Simulator |
-| **Usage of Google Technologies** (15%) | ⭐⭐⭐⭐⭐ | Gemini 3.1 Pro (thinking_level: medium/high), Firebase Auth, Cloud Firestore, real-time onSnapshot |
-| **Product Experience & Design** (10%) | ⭐⭐⭐⭐⭐ | Premium light-theme landing, dark dashboard, Framer Motion micro-animations, 100% mobile optimized |
-| **Technical Implementation** (10%) | ⭐⭐⭐⭐⭐ | Next.js 16.2 App Router, Turbopack, SSE streaming, custom calendar engine, AI fallback routing |
-| **Completeness & Usability** (5%) | ⭐⭐⭐⭐⭐ | Full auth flow, 5 dashboard pages, 9 API routes, Docker ready, complete env documentation |
-
----
 
 ## 🐳 Docker
 
