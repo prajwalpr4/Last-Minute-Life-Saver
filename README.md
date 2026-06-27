@@ -340,37 +340,7 @@ All AI endpoints are Next.js serverless route handlers under `/app/api/`.
 - Firebase Admin SDK credentials (`FIREBASE_SERVICE_ACCOUNT_KEY`) are server-side only
 - `NEXT_PUBLIC_` prefixed variables are the only ones exposed to the client
 
----
 
-## 📱 Mobile Support
-
-The entire application — both the public landing page and the authenticated dashboard — is fully optimized for mobile devices:
-
-- **Landing page**: Full-width CTAs, scaled pulse ring, responsive hero grid, hamburger nav
-- **Dashboard**: Sidebar hidden on mobile, full mobile navigation via top navbar hamburger menu
-- **Calendar**: 44px minimum touch targets on day cells
-- **Modals**: 16px safety margins on all edges, internal scroll for long AI responses
-- **Task cards**: Flex-wrap action buttons for narrow screens
-- **All animations**: `prefers-reduced-motion` respected across every component
-
----
-
-## 🎨 Design System
-
-The app uses a custom design system defined in `globals.css` with CSS custom properties:
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--primary` | `#4C3FE0` | Electric violet-blue, primary actions |
-| Teal | `#2BB7A8` | Calm state, success, calendar |
-| Coral | `#FF5A36` | Urgent state, Panic Mode, destructive |
-| Amber | `#E8A33D` | Mid-urgency, warnings, Auto-Plan |
-| Background | `#FAFAF7` | Warm off-white (landing page) |
-| Dark | Dark slate | Dashboard (dark-mode native) |
-
-**Typography**: Poppins (headings) · Plus Jakarta Sans (body) · Monospace (timestamps)
-
----
 
 
 ## 🐳 Docker
@@ -413,19 +383,7 @@ tasks/{taskId}
   └── createdAt: timestamp
 ```
 
----
 
-## 🤝 Contributing
-
-Contributions, issues and feature requests are welcome!
-
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feat/amazing-feature`
-3. Commit your changes: `git commit -m 'feat: add amazing feature'`
-4. Push to the branch: `git push origin feat/amazing-feature`
-5. Open a Pull Request
-
----
 
 ## 📜 License
 
