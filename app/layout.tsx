@@ -34,6 +34,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,6 +43,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__FIREBASE_CONFIG__ = {
+                apiKey: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "")},
+                authDomain: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "")},
+                projectId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "")},
+                storageBucket: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "")},
+                messagingSenderId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "")},
+                appId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "")},
+                measurementId: ${JSON.stringify(process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || "")}
+              };
+            `
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <Providers>{children}</Providers>
       </body>
