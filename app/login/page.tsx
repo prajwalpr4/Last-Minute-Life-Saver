@@ -130,22 +130,7 @@ export default function LoginPage() {
     }
   };
 
-  // ─── Google Sign In ───────────────────────────────────────────────────────
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      toast.success("Signed in with Google! 🚀");
-      router.push("/dashboard");
-    } catch (error: unknown) {
-      const err = error as { code?: string };
-      if (err.code !== "auth/popup-closed-by-user") {
-        toast.error("Google sign-in failed. Please try again.");
-      }
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
+
 
   return (
     <div className="min-h-screen flex">
@@ -308,32 +293,7 @@ export default function LoginPage() {
             </AnimatePresence>
           </div>
 
-          {/* Google Sign In */}
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border border-border rounded-xl font-medium text-sm text-foreground hover:bg-muted transition-all duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            ) : (
-              <GoogleIcon />
-            )}
-            <span>
-              {isGoogleLoading ? "Connecting..." : "Continue with Google"}
-            </span>
-          </motion.button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              or
-            </span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

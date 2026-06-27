@@ -1,113 +1,96 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { toast } from "sonner";
-import { useAuth } from "@/lib/auth-context";
 import {
   CalendarDays,
-  ExternalLink,
-  Clock,
-  RefreshCw,
-  Loader2,
-  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  CheckCircle2,
 } from "lucide-react";
-import type { CalendarEvent } from "@/types";
+import type { Task } from "@/types";
 
-export default function CalendarWidget() {
-  const { user } = useAuth();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface CalendarWidgetProps {
+  tasks?: Task[];
+}
 
-  const fetchEvents = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setError(null);
+const getDaysInMonth = (year: number, month: number) => {
+  const date = new Date(year, month, 1);
+  const days: Date[] = [];
+  const startDay = date.getDay(); // 0 is Sunday
+  
+  // Pad beginning with previous month days
+  for (let i = startDay; i > 0; i--) {
+    days.push(new Date(year, month, 1 - i));
+  }
+  
+  // Current month
+  while (date.getMonth() === month) {
+    days.push(new Date(date));
+    date.setDate(date.getDate() + 1);
+  }
+  
+  // Pad end to complete 42 cells (6 weeks)
+  const remaining = 42 - days.length;
+  for (let i = 1; i <= remaining; i++) {
+    days.push(new Date(year, month + 1, i));
+  }
+  
+  return days;
+};
 
-    try {
-      const res = await fetch(`/api/calendar?uid=${user.uid}`);
-      const data = await res.json();
+const isSameDay = (d1: Date, d2: Date) => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
+};
 
-      if (!data.success) {
-        setError(data.error || "Failed to load calendar");
-        setEvents([]);
-        return;
-      }
+export default function CalendarWidget({ tasks = [] }: CalendarWidgetProps) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-      setEvents(data.data || []);
-    } catch {
-      setError("Could not connect to calendar");
-      setEvents([]);
-    } finally {
-      setIsLoading(false);
-    }
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, month - 1, 1));
   };
 
-  const handleConnect = () => {
-    setIsConnecting(true);
-    // Simulate OAuth flow
-    setTimeout(() => {
-      setIsConnecting(false);
-      setIsConnected(true);
-      fetchEvents();
-      toast.success("Google Calendar connected successfully! 📅");
-    }, 1500);
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  useEffect(() => {
-    // Just stop loading initially. We wait for user to click connect.
-    setIsLoading(false);
-  }, [user]);
-
-  const formatTime = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-    } catch {
-      return dateStr;
-    }
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr);
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      if (date.toDateString() === today.toDateString()) return "Today";
-      if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
-      return date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  };
-
-  const eventColors = [
-    "bg-indigo-500",
-    "bg-blue-500",
-    "bg-cyan-500",
-    "bg-emerald-500",
-    "bg-purple-500",
+  const days = getDaysInMonth(year, month);
+  const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
   ];
+
+  const getTaskDate = (task: Task) => {
+    try {
+      if (task.deadline) return new Date(task.deadline);
+      const created = task.createdAt as any;
+      if (!created) return new Date();
+      if (created?.toMillis) return new Date(created.toMillis());
+      return new Date(created);
+    } catch {
+      return new Date();
+    }
+  };
+
+  // Find tasks for the selected date
+  const selectedTasks = tasks.filter((t) => isSameDay(getTaskDate(t), selectedDate));
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="card-elevated p-6 h-full"
+      className="card-elevated p-6 h-full flex flex-col"
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
@@ -117,114 +100,109 @@ export default function CalendarWidget() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground tracking-tight">
-              Schedule
+              Calendar
             </h2>
-            <p className="text-xs text-muted-foreground">
-              Upcoming events
-            </p>
+            <p className="text-xs text-muted-foreground">Task Timeline</p>
           </div>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.1, rotate: 180 }}
-          whileTap={{ scale: 0.9 }}
-          onClick={fetchEvents}
-          disabled={isLoading}
-          className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-        </motion.button>
       </div>
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="flex gap-3 items-start">
-              <div className="w-1 h-12 skeleton rounded-full" />
-              <div className="flex-1 space-y-2">
-                <div className="h-3.5 skeleton rounded w-3/4" />
-                <div className="h-3 skeleton rounded w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : !isConnected ? (
-        <div className="text-center py-8">
-          <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-            <CalendarPlus className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground mb-1">Connect Calendar</h3>
-          <p className="text-xs text-muted-foreground/80 mb-6 max-w-[200px] mx-auto">
-            Sync your Google Calendar to auto-schedule tasks and avoid conflicts.
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleConnect}
-            disabled={isConnecting}
-            className="btn btn-primary text-xs px-5 py-2 w-full max-w-[200px]"
-          >
-            {isConnecting ? (
-              <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-            ) : (
-              "Connect with Google"
-            )}
-          </motion.button>
-        </div>
-      ) : events.length === 0 ? (
-        <div className="text-center py-8">
-          <CalendarDays className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">No upcoming events</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            Your calendar is clear! 🎉
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {events.slice(0, 5).map((event, i) => (
-            <motion.div
-              key={event.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
-              className="flex gap-3 items-start group p-2.5 rounded-xl hover:bg-muted transition-colors"
-            >
-              {/* Color bar */}
-              <div
-                className={`w-1 h-full min-h-[2.5rem] rounded-full ${
-                  eventColors[i % eventColors.length]
-                } flex-shrink-0`}
-              />
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between mb-4 px-1">
+        <button
+          onClick={handlePrevMonth}
+          className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+        >
+          <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+        </button>
+        <span className="text-sm font-semibold text-foreground">
+          {monthNames[month]} {year}
+        </span>
+        <button
+          onClick={handleNextMonth}
+          className="p-1.5 hover:bg-muted rounded-lg transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
 
-              {/* Event info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground leading-snug truncate">
-                  {event.title}
-                </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Clock className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(event.start)} · {formatTime(event.start)} –{" "}
-                    {formatTime(event.end)}
-                  </span>
+      {/* Grid Header */}
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {weekDays.map((wd) => (
+          <div key={wd} className="text-center text-[10px] font-semibold text-muted-foreground uppercase">
+            {wd}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="grid grid-cols-7 gap-1 mb-4">
+        {days.map((day, idx) => {
+          const isSelected = isSameDay(day, selectedDate);
+          const isCurrentMonth = day.getMonth() === month;
+          const isTodayDate = isSameDay(day, new Date());
+          const hasTasks = tasks.some((t) => isSameDay(getTaskDate(t), day) && t.status !== "completed");
+          const hasCompletedTasks = tasks.some((t) => isSameDay(getTaskDate(t), day) && t.status === "completed");
+
+          return (
+            <button
+              key={idx}
+              onClick={() => setSelectedDate(day)}
+              className={`
+                relative min-h-[44px] sm:h-9 rounded-md flex items-center justify-center text-sm transition-colors
+                ${isSelected ? "bg-primary text-primary-foreground font-semibold shadow-sm" : "hover:bg-muted"}
+                ${!isCurrentMonth ? "text-muted-foreground/30" : isSelected ? "" : "text-foreground"}
+                ${isTodayDate && !isSelected ? "text-primary font-bold bg-primary/5" : ""}
+              `}
+            >
+              {day.getDate()}
+              
+              {/* Task Indicators */}
+              <div className="absolute bottom-1.5 flex gap-1">
+                {hasTasks && <div className={`w-1 h-1 rounded-full ${isSelected ? "bg-white" : "bg-red-400"}`} />}
+                {hasCompletedTasks && !hasTasks && <div className={`w-1 h-1 rounded-full ${isSelected ? "bg-white/70" : "bg-emerald-400"}`} />}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected Date Tasks */}
+      <div className="flex-1 border-t border-border pt-4 flex flex-col min-h-[150px]">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          {isSameDay(selectedDate, new Date()) 
+            ? "Today's Tasks" 
+            : selectedDate.toLocaleDateString("en-US", { weekday: 'long', month: "short", day: "numeric" })}
+        </h3>
+        
+        {selectedTasks.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground">
+            <p className="text-xs">No tasks scheduled.</p>
+          </div>
+        ) : (
+          <div className="space-y-2 overflow-y-auto max-h-[250px] pr-2 custom-scrollbar">
+            {selectedTasks.map((task) => (
+              <div key={task.id} className="flex items-start gap-2.5 p-2.5 rounded-lg bg-muted/30 border border-border/50 hover:bg-muted/60 transition-colors">
+                {task.status === "completed" ? (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                ) : (
+                  <Circle className="w-4 h-4 text-slate-300 flex-shrink-0 mt-0.5" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm leading-tight ${task.status === "completed" ? "line-through text-muted-foreground" : "text-foreground font-medium"}`}>
+                    {task.title}
+                  </p>
+                  {task.priority && (
+                     <span className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider block">
+                       {task.priority} Priority
+                     </span>
+                  )}
                 </div>
               </div>
-
-              {/* External link */}
-              {event.link && (
-                <a
-                  href={event.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }

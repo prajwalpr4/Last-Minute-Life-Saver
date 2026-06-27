@@ -15,6 +15,7 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
+  GoogleAuthProvider,
   type User as FirebaseUser,
   type UserCredential,
 } from "firebase/auth";
@@ -37,6 +38,7 @@ interface AuthContextType {
   ) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -116,12 +118,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const credential = await signInWithPopup(auth, googleProvider);
     await ensureUserDocument(credential.user);
 
-    // Mark calendar as connected
+    // Extract access token
+    const oAuthCred = GoogleAuthProvider.credentialFromResult(credential);
+    const accessToken = oAuthCred?.accessToken || null;
+
+    // Mark calendar as connected and store token
     const userRef = doc(db, "users", credential.user.uid);
     await setDoc(
       userRef,
       {
         googleCalendarConnected: true,
+        googleAccessToken: accessToken,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
@@ -136,6 +143,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(auth);
   };
 
+  // Force Refresh User
+  const refreshUser = async () => {
+    const auth = getFirebaseAuth();
+    if (auth.currentUser) {
+      // Create a shallow copy to force React state update
+      setUser(Object.assign(Object.create(Object.getPrototypeOf(auth.currentUser)), auth.currentUser));
+    }
+  };
+
   const value = useMemo(
     () => ({
       user,
@@ -144,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUpWithEmail,
       signInWithGoogle,
       signOut,
+      refreshUser,
     }),
     [user, loading]
   );

@@ -11,6 +11,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { updateProfile } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardNavbar from "@/components/dashboard/DashboardNavbar";
@@ -38,7 +39,7 @@ export default function ProfilePage() {
 }
 
 function ProfileContent() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [profile, setProfile] = useState<Partial<User>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -117,6 +118,10 @@ function ProfileContent() {
         updatedAt: serverTimestamp(),
       });
 
+      // Update Firebase Auth profile
+      await updateProfile(user, { photoURL: downloadURL });
+      await refreshUser();
+
       setAvatarPreview(downloadURL);
       setProfile((prev) => ({ ...prev, profilePicUrl: downloadURL }));
       toast.success("Profile photo updated! 📸");
@@ -146,6 +151,10 @@ function ProfileContent() {
         bio: bio.trim(),
         updatedAt: serverTimestamp(),
       });
+
+      // Update Firebase Auth profile
+      await updateProfile(user, { displayName: name.trim() });
+      await refreshUser();
 
       setProfile((prev) => ({
         ...prev,
@@ -227,15 +236,15 @@ function ProfileContent() {
             transition={{ duration: 0.4, delay: 0.02 }}
             className="grid grid-cols-3 gap-4"
           >
-            <div className="card-elevated p-6 flex flex-col items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-600 text-white">
+            <div className="card-elevated p-6 flex flex-col items-center justify-center text-white" style={{ background: "linear-gradient(to bottom right, #6366f1, #4f46e5)" }}>
               <span className="text-3xl font-bold">{profile.vibeScore || 0}</span>
               <span className="text-xs font-semibold uppercase tracking-wider opacity-80 mt-1">Vibe Score</span>
             </div>
-            <div className="card-elevated p-6 flex flex-col items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
+            <div className="card-elevated p-6 flex flex-col items-center justify-center text-white" style={{ background: "linear-gradient(to bottom right, #10b981, #059669)" }}>
               <span className="text-3xl font-bold">{profile.points || 0}</span>
               <span className="text-xs font-semibold uppercase tracking-wider opacity-80 mt-1">Points</span>
             </div>
-            <div className="card-elevated p-6 flex flex-col items-center justify-center bg-gradient-to-br from-orange-500 to-orange-600 text-white">
+            <div className="card-elevated p-6 flex flex-col items-center justify-center text-white" style={{ background: "linear-gradient(to bottom right, #f97316, #ea580c)" }}>
               <span className="text-3xl font-bold flex items-center gap-1">
                 🔥 {profile.streak || 0}
               </span>
@@ -261,6 +270,7 @@ function ProfileContent() {
                     <img
                       src={avatarPreview}
                       alt="Profile"
+                      onError={() => setAvatarPreview(null)}
                       className="w-24 h-24 rounded-full object-cover ring-4 ring-white shadow-lg"
                     />
                   ) : (

@@ -13,6 +13,9 @@ import {
   ChevronDown,
   Menu,
   X,
+  CheckSquare,
+  Calendar,
+  Trophy,
 } from "lucide-react";
 
 export default function DashboardNavbar() {
@@ -52,7 +55,7 @@ export default function DashboardNavbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-sm shadow-indigo-500/20">
+          <div className="w-8 h-8 rounded-lg gradient-primary flex items-center justify-center shadow-sm shadow-indigo-500/20 flex-shrink-0">
             <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
           </div>
           <span className="text-base font-semibold text-foreground tracking-tight hidden sm:block">
@@ -64,7 +67,7 @@ export default function DashboardNavbar() {
         <div className="hidden md:block flex-1"></div>
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* User avatar dropdown */}
           <div className="relative" ref={dropdownRef}>
             <motion.button
@@ -141,7 +144,7 @@ export default function DashboardNavbar() {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-muted transition-colors"
           >
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -159,25 +162,29 @@ export default function DashboardNavbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-border bg-card/90 backdrop-blur-sm overflow-hidden"
+            className="lg:hidden border-t border-border bg-card/95 backdrop-blur-md overflow-hidden absolute w-full shadow-lg"
           >
             <div className="px-4 py-3 space-y-1">
-              <Link
-                href="/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground bg-muted"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Dashboard
-              </Link>
-              <Link
-                href="/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted"
-              >
-                <UserCircle className="w-4 h-4" />
-                Profile
-              </Link>
+              {[
+                { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+                { name: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
+                { name: "Calendar", href: "/dashboard/calendar", icon: Calendar },
+                { name: "Leaderboard", href: "/dashboard/leaderboard", icon: Trophy },
+                { name: "Profile", href: "/profile", icon: UserCircle },
+              ].map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  >
+                    <Icon className="w-4 h-4" />
+                    {link.name}
+                  </Link>
+                );
+              })}
             </div>
           </motion.div>
         )}

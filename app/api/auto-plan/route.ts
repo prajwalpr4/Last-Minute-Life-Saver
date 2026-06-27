@@ -1,7 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,14 +12,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      return Response.json(
-        { success: false, error: "Gemini API key not configured" },
-        { status: 500 }
-      );
-    }
-
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // No longer requiring GEMINI_API_KEY for this route as we use Groq
 
     const prompt = `You are a productivity AI that breaks down large tasks into actionable subtasks.
 
@@ -60,8 +50,39 @@ JSON format:
 
 For scheduling, use today's date (${new Date().toISOString().split("T")[0]}) and spread subtasks across reasonable work hours (9 AM - 9 PM). Return ONLY the JSON:`;
 
-    const result = await model.generateContent(prompt);
-    let responseText = result.response.text().trim();
+    let groqKey = process.env.GROQ_API_KEY;
+    if (!groqKey) {
+      try {
+        const fs = require("fs");
+        const envContent = fs.readFileSync(".env.local", "utf8");
+        const match = envContent.match(/GROQ_API_KEY=(.*)/);
+        if (match) groqKey = match[1].trim();
+      } catch (e) {}
+    }
+
+    if (!groqKey) {
+      return Response.json({ success: false, error: "Groq API key not configured" }, { status: 500 });
+    }
+
+    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${groqKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: "You are a productivity AI that breaks down large tasks into actionable subtasks. Return ONLY raw, valid JSON matching the schema." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.2,
+      })
+    });
+
+    if (!groqRes.ok) throw new Error("Groq API failed");
+    const groqData = await groqRes.json();
+    let responseText = groqData.choices[0].message.content.trim();
 
     // Parse JSON
     const match = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { getAuth } from "firebase/auth";
 import { getFirebaseDb } from "@/lib/firebase";
 import {
   collection,
@@ -17,6 +18,9 @@ import {
   onSnapshot,
   serverTimestamp,
   increment,
+  getDoc,
+  setDoc,
+  getDocs,
 } from "firebase/firestore";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -25,6 +29,10 @@ import BrainDumpInput from "@/components/dashboard/BrainDumpInput";
 import TaskCard from "@/components/dashboard/TaskCard";
 import CalendarWidget from "@/components/dashboard/CalendarWidget";
 import PanicModal from "@/components/dashboard/PanicModal";
+import TaskDraftPanel from "@/components/dashboard/TaskDraftPanel";
+import RescueModal from "@/components/dashboard/RescueModal";
+import VoiceCommandCenter from "@/components/dashboard/VoiceCommandCenter";
+import WhatIfSimulator from "@/components/dashboard/WhatIfSimulator";
 
 import type { Task, Subtask, ExtractedTask, PanicSchedule } from "@/types";
 import { ListTodo, Inbox, Sparkles } from "lucide-react";
@@ -38,6 +46,16 @@ export default function DashboardPage() {
   const [panicOpen, setPanicOpen] = useState(false);
   const [panicLoading, setPanicLoading] = useState(false);
   const [panicSchedule, setPanicSchedule] = useState<PanicSchedule | null>(null);
+
+  // Draft state
+  const [draftTask, setDraftTask] = useState<Task | null>(null);
+
+  // Rescue state
+  const [rescueProposal, setRescueProposal] = useState<any>(null);
+  const checkedTasksRef = useRef<Set<string>>(new Set());
+
+  // Simulator state
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
 
   // ─── Real-time Firestore listeners ────────────────────────────────────────
   useEffect(() => {
@@ -59,10 +77,10 @@ export default function DashboardPage() {
           ...doc.data(),
         })) as Task[];
         
-        // Sort locally by createdAt desc
+        // Sort locally by createdAt desc (handle pending server timestamps)
         taskList.sort((a, b) => {
-          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
-          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : Date.now();
           return timeB - timeA;
         });
 
@@ -92,17 +110,20 @@ export default function DashboardPage() {
         const promises = extractedTasks.map((et) =>
           addDoc(collection(db, "tasks"), {
             uid: user.uid,
-            title: et.title,
-            description: et.description,
+            title: et.title || "Untitled Task",
+            description: et.description || "",
             deadline: et.deadline || "",
-            priority: et.priority,
+            priority: et.priority || "medium",
             status: "pending",
             isPanicActive: false,
+            reason: et.reason || null,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           })
         );
         await Promise.all(promises);
+
+
       } catch (error) {
         console.error("Error saving tasks:", error);
         toast.error("Failed to save tasks to database.");
@@ -149,6 +170,23 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Error updating task:", error);
         toast.error("Failed to update task.");
+      }
+    },
+    [user]
+  );
+
+  const handleUpdateDraft = useCallback(
+    async (taskId: string, newContent: string) => {
+      if (!user) return;
+      const db = getFirebaseDb();
+      try {
+        await updateDoc(doc(db, "tasks", taskId), {
+          draftContent: newContent,
+          updatedAt: serverTimestamp(),
+        });
+      } catch (error) {
+        console.error("Error updating draft:", error);
+        toast.error("Failed to save draft edits.");
       }
     },
     [user]
@@ -241,33 +279,157 @@ export default function DashboardPage() {
     [user]
   );
 
+  // ─── Predictive Deadline Rescue ──────────────────────────────────────────
+  useEffect(() => {
+    if (!user || tasks.length === 0 || rescueProposal) return;
+
+    const checkAtRiskTasks = async () => {
+      for (const task of tasks) {
+        if (task.status === "completed" || !task.deadline || checkedTasksRef.current.has(task.id!)) continue;
+
+        const deadlineDate = new Date(task.deadline);
+        const now = new Date();
+        if (deadlineDate < now) continue; // Already overdue
+
+        const hoursRemaining = (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        // Sum estimated time of pending subtasks (naive parse)
+        let estimatedHoursNeeded = 0;
+        const pendingSubtasks = task.subtasks?.filter(s => s.status !== "completed") || [];
+        for (const st of pendingSubtasks) {
+          const lower = st.estimatedTime.toLowerCase();
+          if (lower.includes("hour")) {
+            const num = parseFloat(lower) || 1;
+            estimatedHoursNeeded += num;
+          } else if (lower.includes("min")) {
+            const num = parseFloat(lower) || 30;
+            estimatedHoursNeeded += num / 60;
+          } else {
+            estimatedHoursNeeded += 1; // Default 1 hour fallback
+          }
+        }
+
+        // If math doesn't fit (e.g. 5 hours of work, 3 hours left before deadline)
+        if (estimatedHoursNeeded > 0 && estimatedHoursNeeded > hoursRemaining) {
+          checkedTasksRef.current.add(task.id!);
+          
+          try {
+            // Fetch token
+            const db = getFirebaseDb();
+            const userDoc = await getDoc(doc(db, "users", user.uid));
+            const googleToken = userDoc.data()?.googleAccessToken;
+            
+            if (googleToken) {
+              const res = await fetch("/api/rescue", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ uid: user.uid, task, googleToken }),
+              });
+              const json = await res.json();
+              if (json.success && json.data) {
+                setRescueProposal({ ...json.data, taskId: task.id });
+                break; // Only rescue one at a time to avoid modal spam
+              }
+            }
+          } catch (e) {
+            console.error("Failed to check rescue:", e);
+          }
+        }
+      }
+    };
+
+    const timeout = setTimeout(checkAtRiskTasks, 3000); // Debounce
+    return () => clearTimeout(timeout);
+  }, [tasks, user, rescueProposal]);
+
   // ─── Computed ─────────────────────────────────────────────────────────────
   const activeTasks = tasks.filter((t) => t.status !== "completed");
   const completedTasks = tasks.filter((t) => t.status === "completed");
 
+  const handleRefreshProfile = async () => {
+    if (!user) return;
+    try {
+      const db = getFirebaseDb();
+      // 1. Seed fake data if empty
+      const eventsRef = collection(db, "task_events");
+      const q = query(eventsRef, where("ownerId", "==", user.uid));
+      const snapshot = await getDocs(q);
+      
+      let events: any[] = [];
+      if (snapshot.empty) {
+        toast("Seeding fake task history for demo...");
+        const fakeEvents = [
+          { ownerId: user.uid, taskId: 't1', eventType: 'completed', taskCategory: 'email', timestamp: new Date(Date.now() - 2*24*60*60*1000).toISOString() },
+          { ownerId: user.uid, taskId: 't2', eventType: 'panic_mode_triggered', taskCategory: 'coding', timestamp: new Date(Date.now() - 3*24*60*60*1000).toISOString() },
+          { ownerId: user.uid, taskId: 't3', eventType: 'delayed', taskCategory: 'coding', timestamp: new Date(Date.now() - 4*24*60*60*1000).toISOString() },
+          { ownerId: user.uid, taskId: 't4', eventType: 'completed', taskCategory: 'writing', timestamp: new Date(Date.now() - 1*24*60*60*1000).toISOString() },
+          { ownerId: user.uid, taskId: 't5', eventType: 'delayed', taskCategory: 'coding', timestamp: new Date(Date.now() - 5*24*60*60*1000).toISOString() }
+        ];
+        for (const ev of fakeEvents) {
+          const newDoc = doc(eventsRef);
+          await setDoc(newDoc, ev);
+          events.push(ev);
+        }
+      } else {
+        events = snapshot.docs.map(d => d.data());
+      }
+
+      toast("Analyzing behavioral profile...");
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: user.uid, events })
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+
+      await updateDoc(doc(db, "users", user.uid), {
+        productivity_profile: json.data
+      });
+      toast.success("Productivity profile refreshed!");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to refresh profile");
+    }
+  };
+
   return (
     <>
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        {/* Welcome header */}
+        {/* Welcome header & Simulator Action */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-8"
+          className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4"
         >
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-            Welcome back,{" "}
-            <span className="gradient-text">
-              {user?.displayName || user?.email?.split("@")[0] || "User"}
-            </span>{" "}
-            👋
-          </h1>
-          <p className="text-muted-foreground font-light mt-1">
-            {activeTasks.length === 0
-              ? "All clear! Add some tasks to get started."
-              : `You have ${activeTasks.length} active task${activeTasks.length > 1 ? "s" : ""}. Let's crush them.`}
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">
+              Welcome back,{" "}
+              <span className="gradient-text">
+                {user?.displayName || user?.email?.split("@")[0] || "User"}
+              </span>{" "}
+              👋
+              {(user as any)?.productivity_profile && (
+                <button onClick={handleRefreshProfile} className="text-xs px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded-md hover:bg-indigo-500/20 transition-colors">
+                  Refresh Profile
+                </button>
+              )}
+            </h1>
+            <p className="text-muted-foreground font-light mt-1">
+              {activeTasks.length === 0
+                ? "All clear! Add some tasks to get started."
+                : `You have ${activeTasks.length} active task${activeTasks.length > 1 ? "s" : ""}. Let's crush them.`}
+              {!(user as any)?.productivity_profile && (
+                <button onClick={handleRefreshProfile} className="ml-2 text-indigo-400 hover:underline">Generate Productivity Profile</button>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={() => setSimulatorOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 rounded-xl font-medium text-sm transition-colors border border-indigo-500/20 shadow-sm"
+          >
+            <Sparkles className="w-4 h-4" />
+            What-If Simulator
+          </button>
         </motion.div>
 
         {/* Brain Dump Input — Full Width Top */}
@@ -329,7 +491,7 @@ export default function DashboardPage() {
               </motion.div>
             ) : (
               <div className="space-y-3">
-                <AnimatePresence mode="popLayout">
+                <AnimatePresence>
                   {activeTasks.map((task) => (
                     <TaskCard
                       key={task.id}
@@ -338,6 +500,7 @@ export default function DashboardPage() {
                       onDelete={handleDeleteTask}
                       onStatusChange={handleStatusChange}
                       onAutoPlan={handleAutoPlan}
+                      onStartTask={setDraftTask}
                     />
                   ))}
                 </AnimatePresence>
@@ -350,7 +513,7 @@ export default function DashboardPage() {
                       Completed ({completedTasks.length})
                     </p>
                     <div className="space-y-2">
-                      <AnimatePresence mode="popLayout">
+                      <AnimatePresence>
                         {completedTasks.slice(0, 5).map((task) => (
                           <TaskCard
                             key={task.id}
@@ -371,7 +534,7 @@ export default function DashboardPage() {
 
           {/* Calendar Widget — 1/3 width */}
           <div className="lg:col-span-1">
-            <CalendarWidget />
+            <CalendarWidget tasks={tasks} />
           </div>
         </div>
       </main>
@@ -382,6 +545,54 @@ export default function DashboardPage() {
         onClose={() => setPanicOpen(false)}
         schedule={panicSchedule}
         isLoading={panicLoading}
+      />
+
+      {/* Draft Panel */}
+      {draftTask && (
+        <TaskDraftPanel
+          task={draftTask}
+          userId={user?.uid || ""}
+          onClose={() => setDraftTask(null)}
+          onUpdateDraft={handleUpdateDraft}
+        />
+      )}
+
+      {/* Rescue Modal */}
+      <RescueModal
+        isOpen={!!rescueProposal}
+        proposal={rescueProposal}
+        onClose={() => setRescueProposal(null)}
+        onConfirm={async () => {
+          // Send request to execute rescue
+          if (!rescueProposal || !user) return;
+          const db = getFirebaseDb();
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          const googleToken = userDoc.data()?.googleAccessToken;
+          
+          if (!googleToken) throw new Error("No Google token found");
+
+          const res = await fetch("/api/calendar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              token: googleToken, 
+              rescueMode: true,
+              proposal: rescueProposal 
+            }),
+          });
+          const json = await res.json();
+          if (!json.success) throw new Error(json.error);
+        }}
+      />
+
+      <VoiceCommandCenter userId={user?.uid || ""} />
+
+      <WhatIfSimulator
+        isOpen={simulatorOpen}
+        onClose={() => setSimulatorOpen(false)}
+        userId={user?.uid || ""}
+        tasks={tasks}
+        googleToken={user?.googleCalendarConnected ? (user as any).googleAccessToken : undefined}
       />
     </>
   );

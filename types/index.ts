@@ -31,7 +31,10 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
   isPanicActive: boolean;
+  reason?: string;
   subtasks?: Subtask[];
+  draftContent?: string;
+  draftType?: "text" | "code" | "outline";
   createdAt: Date | string;
   updatedAt?: Date | string;
 }
@@ -57,6 +60,7 @@ export interface ExtractedTask {
   description: string;
   priority: TaskPriority;
   deadline?: string;
+  reason?: string;
 }
 
 // ─── Panic Mode Schedule ─────────────────────────────────────────────────────

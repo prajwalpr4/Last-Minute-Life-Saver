@@ -8,9 +8,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const text = formData.get("text") as string;
     const uid = formData.get("uid") as string;
-    const imageFile = formData.get("image") as File | null;
+    const file = (formData.get("file") || formData.get("image")) as File | null;
 
-    if (!text && !imageFile) {
+    if (!text && !file) {
       return Response.json(
         { success: false, error: "No input provided" },
         { status: 400 }
@@ -34,33 +34,129 @@ export async function POST(request: NextRequest) {
         };
 
         try {
-          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+          const model = genAI.getGenerativeModel({
+            model: "gemini-3.1-pro-preview",
+            generationConfig: {
+              thinkingConfig: {
+                thinkingLevel: "medium", // Routine extraction and scheduling
+              },
+            },
+          });
 
-          // Helper to call Gemini and parse JSON
-          const askGemini = async (promptText: string, includeImage = false) => {
-            const parts: any[] = [{ text: promptText }];
-            if (includeImage && imageFile) {
-              const bytes = await imageFile.arrayBuffer();
-              const base64 = Buffer.from(bytes).toString("base64");
-              parts.push({
-                inlineData: {
-                  mimeType: imageFile.type,
-                  data: base64,
-                },
-              });
+          // Helper to call Gemini and parse JSON (with Groq Fallback)
+          const askGemini = async (promptText: string, includeFile = false) => {
+            const parseJson = (text: string) => {
+              let cleaned = text.trim();
+              const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+              if (match) {
+                cleaned = match[1].trim();
+              } else if (cleaned.startsWith("```")) {
+                cleaned = cleaned.replace(/^```json?\s*/i, "").replace(/```$/i, "").trim();
+              } else {
+                const firstBrace = cleaned.indexOf('{');
+                const firstBracket = cleaned.indexOf('[');
+                const lastBrace = cleaned.lastIndexOf('}');
+                const lastBracket = cleaned.lastIndexOf(']');
+                let startIdx = -1;
+                let endIdx = -1;
+                if (firstBrace !== -1 && (firstBracket === -1 || firstBrace < firstBracket)) {
+                  startIdx = firstBrace;
+                  endIdx = lastBrace;
+                } else if (firstBracket !== -1) {
+                  startIdx = firstBracket;
+                  endIdx = lastBracket;
+                }
+                if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+                  cleaned = cleaned.substring(startIdx, endIdx + 1);
+                }
+              }
+              return JSON.parse(cleaned);
+            };
+
+            try {
+              const parts: any[] = [{ text: promptText }];
+              if (includeFile && file) {
+                const bytes = await file.arrayBuffer();
+                const base64 = Buffer.from(bytes).toString("base64");
+                parts.push({
+                  inlineData: {
+                    mimeType: file.type,
+                    data: base64,
+                  },
+                });
+              }
+              const result = await model.generateContent(parts);
+              return parseJson(result.response.text());
+            } catch (error: any) {
+              // Fallback to Groq
+              let groqKey = process.env.GROQ_API_KEY;
+              if (!groqKey) {
+                try {
+                  const fs = require("fs");
+                  const envContent = fs.readFileSync(".env.local", "utf8");
+                  const match = envContent.match(/GROQ_API_KEY=(.*)/);
+                  if (match) groqKey = match[1].trim();
+                } catch (e) {}
+              }
+
+              if (groqKey) {
+                console.log("Gemini failed (likely rate limit), falling back to Groq API...");
+                try {
+                  let modelName = "llama-3.3-70b-versatile";
+                  const messages: any[] = [
+                    { role: "system", content: "You are a helpful AI assistant. Always return ONLY raw, valid JSON matching the requested schema. Do NOT wrap in markdown." },
+                  ];
+
+                  if (includeFile && file) {
+                    if (file.type.startsWith("image/")) {
+                      modelName = "llama-3.2-11b-vision-preview";
+                      const bytes = await file.arrayBuffer();
+                      const base64 = Buffer.from(bytes).toString("base64");
+                      messages.push({
+                        role: "user",
+                        content: [
+                          { type: "text", text: promptText },
+                          { type: "image_url", image_url: { url: `data:${file.type};base64,${base64}` } }
+                        ]
+                      });
+                    } else {
+                      // Fallback for PDFs on Groq (just pass text)
+                      messages.push({ role: "user", content: promptText + "\n\n[Note: A PDF was attached but could not be processed by the fallback AI, please rely on the text.]" });
+                    }
+                  } else {
+                    messages.push({ role: "user", content: promptText });
+                  }
+
+                  const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                      "Authorization": `Bearer ${groqKey}`,
+                      "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                      model: modelName,
+                      messages: messages,
+                      temperature: 0.1,
+                    })
+                  });
+
+                  if (!groqRes.ok) {
+                    const errText = await groqRes.text();
+                    throw new Error("Groq fallback failed: " + errText);
+                  }
+
+                  const groqData = await groqRes.json();
+                  return parseJson(groqData.choices[0].message.content);
+                } catch (groqError) {
+                  console.error("Groq fallback also failed:", groqError);
+                  throw error; // Throw original Gemini error
+                }
+              }
+              throw error; // Throw original Gemini error if no Groq key
             }
-            const result = await model.generateContent(parts);
-            let responseText = result.response.text().trim();
-            const match = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-            if (match) {
-              responseText = match[1].trim();
-            } else if (responseText.startsWith("```")) {
-              responseText = responseText.replace(/^```json?\s*/i, "").replace(/```$/i, "").trim();
-            }
-            return JSON.parse(responseText);
           };
 
-          const userInputText = text || "[See attached image]";
+          const userInputText = text || "[See attached file]";
 
           // Step 1: Categorizing
           sendStep("Categorizing");
@@ -84,13 +180,14 @@ Return ONLY a JSON array of objects: { "title": string, "priority": string }`;
           // Step 4: Scheduling
           sendStep("Scheduling");
           const step4Prompt = `Given these prioritized tasks: ${JSON.stringify(prioritizedTasks)}, infer a timeframe or deadline if implied by the original user input: "${userInputText}".
+Also, consider their Productivity Profile if available: ${uid ? "Check profile" : "Unknown"}. If they are weak in the morning, do not schedule hard tasks then.
 Return ONLY a JSON array of objects: { "title": string, "priority": string, "timeframe": "string or null" }`;
           const scheduledTasks = await askGemini(step4Prompt, false);
 
           // Step 5: Finalizing
           sendStep("Finalizing");
           const step5Prompt = `Finalize these tasks: ${JSON.stringify(scheduledTasks)}. Format them into the final schema.
-Return ONLY a JSON array of objects matching exactly: { "title": string, "description": string (short 1 sentence detail), "priority": string (low, medium, high, urgent) }. Make sure priority strictly matches one of those 4 strings.`;
+Return ONLY a JSON array of objects matching exactly: { "title": string, "description": string (short 1 sentence detail), "priority": string (low, medium, high, urgent), "reason": string (a short sentence explaining why this task was prioritized or scheduled this way), "deadline": string (YYYY-MM-DD) | null (if a timeframe/deadline was inferred) }. Make sure priority strictly matches one of those 4 strings.`;
           const finalTasks = await askGemini(step5Prompt, false);
 
           // Send final completion

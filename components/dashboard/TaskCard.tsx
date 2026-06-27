@@ -14,6 +14,8 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
+  Info,
+  Sparkles,
 } from "lucide-react";
 import type { Task, Subtask } from "@/types";
 
@@ -23,6 +25,7 @@ interface TaskCardProps {
   onDelete: (taskId: string) => void;
   onStatusChange: (taskId: string, status: Task["status"]) => void;
   onAutoPlan: (task: Task) => void;
+  onStartTask?: (task: Task) => void;
 }
 
 const priorityConfig = {
@@ -45,6 +48,7 @@ export default function TaskCard({
   onDelete,
   onStatusChange,
   onAutoPlan,
+  onStartTask,
 }: TaskCardProps) {
   const [isAutoPlanLoading, setIsAutoPlanLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -95,15 +99,25 @@ export default function TaskCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <h3
-                className={`text-sm font-semibold leading-snug ${
-                  isCompleted
-                    ? "line-through text-muted-foreground"
-                    : "text-foreground"
-                }`}
-              >
-                {task.title}
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3
+                  className={`text-sm font-semibold leading-snug ${
+                    isCompleted
+                      ? "line-through text-muted-foreground"
+                      : "text-foreground"
+                  }`}
+                >
+                  {task.title}
+                </h3>
+                {task.reason && (
+                  <div className="group relative flex items-center">
+                    <Info className="w-3.5 h-3.5 text-indigo-400 hover:text-indigo-500 transition-colors cursor-help" />
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all bg-slate-800 text-slate-100 text-xs p-2 rounded-lg shadow-xl z-50 pointer-events-none before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-4 before:border-transparent before:border-t-slate-800">
+                      {task.reason}
+                    </div>
+                  </div>
+                )}
+              </div>
               {task.description && (
                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2 font-light">
                   {task.description}
@@ -128,6 +142,19 @@ export default function TaskCard({
                 <Clock className="w-3 h-3" />
                 {task.deadline}
               </span>
+            )}
+
+            {onStartTask && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStartTask(task);
+                }}
+                className="flex items-center gap-1.5 ml-auto text-xs px-2.5 py-1 bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 hover:text-indigo-300 rounded-md font-medium transition-colors border border-indigo-500/20 shadow-sm"
+              >
+                <Sparkles className="w-3 h-3" />
+                Start Task
+              </button>
             )}
 
             {taskSubtasks.length > 0 && (
@@ -183,7 +210,7 @@ export default function TaskCard({
           )}
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-4 flex-wrap">
             {/* Auto-Plan */}
             {!isCompleted && (
               <motion.button

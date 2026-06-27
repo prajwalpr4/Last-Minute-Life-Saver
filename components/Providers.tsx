@@ -7,7 +7,7 @@ import PageTransition from "@/components/PageTransition";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
       <AuthProvider>
         <ToastProvider />
         <PageTransition>{children}</PageTransition>
