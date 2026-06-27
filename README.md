@@ -3,7 +3,7 @@
 
 
 <h1>
-  <img src="https://img.shields.io/badge/⚡-LastMinSaver-4C3FE0?style=for-the-badge&logoColor=white&labelColor=1a1a2e" height="42" alt="LastMinSaver"/>
+  <img src="https://img.shields.io/badge/⚡-Last--Minute_Life_Saver-4C3FE0?style=for-the-badge&logoColor=white&labelColor=1a1a2e" height="42" alt="Last-Minute Life Saver"/>
 </h1>
 
 ### **The Agentic AI Productivity Engine for Procrastinators & Students**
