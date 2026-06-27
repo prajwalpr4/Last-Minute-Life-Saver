@@ -425,34 +425,7 @@ export default function BrainDumpInput({ onTasksExtracted }: BrainDumpInputProps
           {isRecording ? "Stop" : "Voice"}
         </motion.button>
 
-        {/* Image / Document */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessing || pendingTasks.length > 0}
-          className="btn btn-secondary text-sm px-4 py-2"
-        >
-          <ImagePlus className="w-4 h-4" />
-          Image
-        </motion.button>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessing || pendingTasks.length > 0}
-          className="btn btn-secondary text-sm px-4 py-2"
-        >
-          <FileText className="w-4 h-4" />
-          Document
-        </motion.button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,application/pdf"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
+
 
         {/* Spacer */}
         <div className="flex-1" />
