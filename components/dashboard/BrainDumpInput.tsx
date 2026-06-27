@@ -185,8 +185,8 @@ export default function BrainDumpInput({ onTasksExtracted }: BrainDumpInputProps
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-          <Brain className="w-5 h-5 text-indigo-600" />
+        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+          <Brain className="w-5 h-5 text-indigo-500" />
         </div>
         <div>
           <h2 className="text-lg font-semibold text-foreground tracking-tight">
@@ -215,10 +215,10 @@ export default function BrainDumpInput({ onTasksExtracted }: BrainDumpInputProps
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="absolute top-3 right-3 flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200"
+              className="absolute top-3 right-3 flex items-center gap-2 px-3 py-1 rounded-full bg-destructive/10 border border-destructive/20"
             >
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-xs font-medium text-red-600">
+              <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
+              <span className="text-xs font-medium text-destructive">
                 Listening...
               </span>
             </motion.div>
@@ -239,7 +239,7 @@ export default function BrainDumpInput({ onTasksExtracted }: BrainDumpInputProps
               <img
                 src={imagePreview}
                 alt="Upload preview"
-                className="w-32 h-32 object-cover rounded-xl border border-slate-200 shadow-sm"
+                className="w-32 h-32 object-cover rounded-xl border border-border shadow-sm"
               />
               <button
                 onClick={removeImage}
@@ -292,7 +292,7 @@ export default function BrainDumpInput({ onTasksExtracted }: BrainDumpInputProps
           disabled={isProcessing}
           className={`btn text-sm px-4 py-2 ${
             isRecording
-              ? "bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+              ? "bg-destructive/10 text-destructive border border-destructive/20 hover:bg-destructive/20"
               : "btn-secondary"
           }`}
         >

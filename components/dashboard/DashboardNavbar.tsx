@@ -48,7 +48,7 @@ export default function DashboardNavbar() {
     : user?.email?.[0]?.toUpperCase() || "U";
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-slate-200/60">
+    <nav className="sticky top-0 z-50 glass border-b border-border/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/dashboard" className="flex items-center gap-2.5 group">
@@ -70,7 +70,7 @@ export default function DashboardNavbar() {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-slate-50 transition-colors"
+              className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-muted transition-colors"
             >
               {user?.photoURL ? (
                 <img
@@ -106,9 +106,9 @@ export default function DashboardNavbar() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 8, scale: 0.96 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-elevated border border-slate-100 py-1.5 z-50"
+                  className="absolute right-0 top-full mt-2 w-56 bg-card rounded-xl shadow-elevated border border-border py-1.5 z-50"
                 >
-                  <div className="px-4 py-2.5 border-b border-slate-100">
+                  <div className="px-4 py-2.5 border-b border-border">
                     <p className="text-sm font-medium text-foreground truncate">
                       {user?.displayName || "User"}
                     </p>
@@ -120,14 +120,14 @@ export default function DashboardNavbar() {
                     <Link
                       href="/profile"
                       onClick={() => setDropdownOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
                     >
                       <UserCircle className="w-4 h-4 text-muted-foreground" />
                       Profile Settings
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
                     >
                       <LogOut className="w-4 h-4" />
                       Sign Out
@@ -141,7 +141,7 @@ export default function DashboardNavbar() {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-slate-50 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-muted transition-colors"
           >
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -159,13 +159,13 @@ export default function DashboardNavbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-slate-100 bg-white/90 backdrop-blur-sm overflow-hidden"
+            className="md:hidden border-t border-border bg-card/90 backdrop-blur-sm overflow-hidden"
           >
             <div className="px-4 py-3 space-y-1">
               <Link
                 href="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground bg-slate-50"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-foreground bg-muted"
               >
                 <LayoutDashboard className="w-4 h-4" />
                 Dashboard
@@ -173,7 +173,7 @@ export default function DashboardNavbar() {
               <Link
                 href="/profile"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-slate-50"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-muted"
               >
                 <UserCircle className="w-4 h-4" />
                 Profile

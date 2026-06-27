@@ -112,8 +112,8 @@ export default function CalendarWidget() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-            <CalendarDays className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+            <CalendarDays className="w-5 h-5 text-blue-500" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground tracking-tight">
@@ -129,7 +129,7 @@ export default function CalendarWidget() {
           whileTap={{ scale: 0.9 }}
           onClick={fetchEvents}
           disabled={isLoading}
-          className="p-2 rounded-lg hover:bg-slate-50 text-muted-foreground transition-colors"
+          className="p-2 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
         </motion.button>
@@ -187,7 +187,7 @@ export default function CalendarWidget() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="flex gap-3 items-start group p-2.5 rounded-xl hover:bg-slate-50 transition-colors"
+              className="flex gap-3 items-start group p-2.5 rounded-xl hover:bg-muted transition-colors"
             >
               {/* Color bar */}
               <div

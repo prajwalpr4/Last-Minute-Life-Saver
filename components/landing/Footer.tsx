@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-100 bg-white">
+    <footer className="border-t border-border bg-card">
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Logo */}
@@ -47,7 +47,7 @@ export default function Footer() {
         </div>
 
         {/* Built with badge */}
-        <div className="mt-8 pt-6 border-t border-slate-50 text-center">
+        <div className="mt-8 pt-6 border-t border-border/50 text-center">
           <p className="text-xs text-muted-foreground/60 font-light">
             Built with ❤️ using Next.js, Google Gemini AI & Firebase
           </p>

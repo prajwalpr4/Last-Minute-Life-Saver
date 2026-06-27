@@ -314,10 +314,10 @@ export default function LoginPage() {
             whileTap={{ scale: 0.98 }}
             onClick={handleGoogleSignIn}
             disabled={isGoogleLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl font-medium text-sm text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 bg-card border border-border rounded-xl font-medium text-sm text-foreground hover:bg-muted transition-all duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isGoogleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
             ) : (
               <GoogleIcon />
             )}
@@ -328,11 +328,11 @@ export default function LoginPage() {
 
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-border" />
             <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
               or
             </span>
-            <div className="flex-1 h-px bg-slate-200" />
+            <div className="flex-1 h-px bg-border" />
           </div>
 
           {/* Form */}

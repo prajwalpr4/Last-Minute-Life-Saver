@@ -304,13 +304,13 @@ function ProfileContent() {
 
                 {/* Badges */}
                 <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-xs font-medium text-emerald-700">
-                    <CheckCircle2 className="w-3 h-3" />
+                  <span className="badge badge-success gap-1.5 py-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
                     Email Verified
                   </span>
                   {profile.googleCalendarConnected && (
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-medium text-blue-700">
-                      <CalendarCheck className="w-3 h-3" />
+                    <span className="badge badge-primary gap-1.5 py-1">
+                      <CalendarCheck className="w-3.5 h-3.5" />
                       Calendar Connected
                     </span>
                   )}
@@ -318,8 +318,8 @@ function ProfileContent() {
               </div>
 
               {/* Edit hint */}
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-slate-50 rounded-lg px-3 py-2">
-                <Pencil className="w-3 h-3" />
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/60 rounded-lg px-3 py-2 border border-border/40">
+                <Pencil className="w-3.5 h-3.5" />
                 Click camera to update photo
               </div>
             </div>
@@ -333,8 +333,8 @@ function ProfileContent() {
             className="card-elevated p-6 sm:p-8"
           >
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 rounded-lg bg-indigo-50 flex items-center justify-center">
-                <UserIcon className="w-4 h-4 text-indigo-600" />
+              <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                <UserIcon className="w-4 h-4 text-indigo-500" />
               </div>
               <h3 className="text-lg font-semibold text-foreground tracking-tight">
                 Personal Information
@@ -381,7 +381,7 @@ function ProfileContent() {
                     type="email"
                     value={user?.email || ""}
                     readOnly
-                    className="input !pl-10 bg-slate-50 text-muted-foreground cursor-not-allowed"
+                    className="input !pl-10 bg-muted/50 text-muted-foreground cursor-not-allowed"
                   />
                   <Shield className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 </div>
@@ -472,8 +472,8 @@ function ProfileContent() {
             className="card p-6"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-slate-600" />
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center">
+                <Shield className="w-4 h-4 text-muted-foreground" />
               </div>
               <h3 className="text-base font-semibold text-foreground tracking-tight">
                 Account Details
@@ -481,13 +481,13 @@ function ProfileContent() {
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 rounded-xl">
+              <div className="p-4 bg-muted/40 border border-border/30 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">User ID</p>
                 <p className="text-sm font-mono text-foreground truncate">
                   {user?.uid?.slice(0, 16)}...
                 </p>
               </div>
-              <div className="p-4 bg-slate-50 rounded-xl">
+              <div className="p-4 bg-muted/40 border border-border/30 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">
                   Sign-in Method
                 </p>
@@ -497,25 +497,25 @@ function ProfileContent() {
                     : "Email & Password"}
                 </p>
               </div>
-              <div className="p-4 bg-slate-50 rounded-xl">
+              <div className="p-4 bg-muted/40 border border-border/30 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">
                   Calendar Sync
                 </p>
                 <p
                   className={`text-sm font-medium ${
                     profile.googleCalendarConnected
-                      ? "text-emerald-600"
+                      ? "text-emerald-500"
                       : "text-muted-foreground"
                   }`}
                 >
                   {profile.googleCalendarConnected ? "Connected ✓" : "Not connected"}
                 </p>
               </div>
-              <div className="p-4 bg-slate-50 rounded-xl">
+              <div className="p-4 bg-muted/40 border border-border/30 rounded-xl">
                 <p className="text-xs text-muted-foreground mb-1">
                   Account Status
                 </p>
-                <p className="text-sm font-medium text-emerald-600">
+                <p className="text-sm font-medium text-emerald-500">
                   Active ✓
                 </p>
               </div>
