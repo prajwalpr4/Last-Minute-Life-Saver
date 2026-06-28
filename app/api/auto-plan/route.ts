@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { parseJson } from "@/lib/json-parser";
 
 export async function POST(request: NextRequest) {
   try {
@@ -84,15 +85,7 @@ For scheduling, use today's date (${new Date().toISOString().split("T")[0]}) and
     const groqData = await groqRes.json();
     let responseText = groqData.choices[0].message.content.trim();
 
-    // Parse JSON
-    const match = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (match) {
-      responseText = match[1].trim();
-    } else if (responseText.startsWith("```")) {
-      responseText = responseText.replace(/^```json?\s*/i, "").replace(/```$/i, "").trim();
-    }
-
-    const parsed = JSON.parse(responseText);
+    const parsed = parseJson(responseText);
 
     // Sanitize subtasks
     const subtasks = (parsed.subtasks || []).map(

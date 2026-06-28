@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { parseJson } from "@/lib/json-parser";
 
 export async function POST(request: NextRequest) {
   try {
@@ -89,15 +90,7 @@ Generate 8-12 steps. Make it intense but doable. Return ONLY the JSON:`;
     const groqData = await groqRes.json();
     let responseText = groqData.choices[0].message.content.trim();
 
-    // Parse JSON
-    const match = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-    if (match) {
-      responseText = match[1].trim();
-    } else if (responseText.startsWith("```")) {
-      responseText = responseText.replace(/^```json?\s*/i, "").replace(/```$/i, "").trim();
-    }
-
-    const schedule = JSON.parse(responseText);
+    const schedule = parseJson(responseText);
 
     // Sanitize
     const sanitized = {

@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
+import { parseJson } from "@/lib/json-parser";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     try {
       const result = await model.generateContent(prompt);
       const responseText = result.response.text();
-      draftData = JSON.parse(responseText);
+      draftData = parseJson(responseText);
     } catch (err) {
       let groqKey = process.env.GROQ_API_KEY;
       if (!groqKey) {
@@ -77,10 +78,8 @@ export async function POST(request: NextRequest) {
         });
         if (!groqRes.ok) throw new Error("Groq fallback failed");
         const groqData = await groqRes.json();
-        let cleaned = groqData.choices[0].message.content.trim();
-        const match = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-        if (match) cleaned = match[1].trim();
-        draftData = JSON.parse(cleaned);
+        const rawContent = groqData.choices[0].message.content;
+        draftData = parseJson(rawContent);
       } else {
         throw err;
       }
