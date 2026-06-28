@@ -2,7 +2,7 @@
 
 
 
-<h1>⚡ Last-Minute Life Saver</h1>
+<h1>⚡ LastMinSaver</h1>
 
 ### **The Agentic AI Productivity Engine for Procrastinators & Students**
 #### *Turning Deadlines into Done-Lines.*
